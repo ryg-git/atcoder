@@ -1,49 +1,44 @@
+import kotlin.math.min
+
 fun next() = readLine()!!.trim()
 
 @kotlin.ExperimentalStdlibApi
 fun main() {
-    val n = next().toInt()
-
-    val edges = List(n - 1) {
-        val (u, v, w) = next().split(" ")
-        Triple(u.toInt() - 1, v.toInt() - 1, w.toLong())
+    val n = readLine()!!.trim().toInt()
+    val permutation = readLine()!!.trim().split(' ').map { it.toInt() - 1 }
+    val costs = List(n) {
+        val (a, b, c) = readLine()!!.trim().split(' ').map(String::toInt)
+        Triple(a, minOf(a, b), minOf(a, c))
     }
 
-    val nodes = List(n){mutableListOf<Pair<Int, Long>>()}
+    val minArr = IntArray(n + 1) { Int.MAX_VALUE }.also { it[0] = 0 }
+    val dp = IntArray(n + 1) { Int.MAX_VALUE }.also { it[0] = 0 }
 
-    edges.forEach { (u, v, w) ->
-        nodes[u].add(v to w)
-        nodes[v].add(u to w)
+    val aSum = costs.fold(mutableListOf(0)) { acc, ele ->
+        acc.add(acc.last() + ele.first)
+        acc
+    }
+    val bSum = costs.fold(mutableListOf(0)) { acc, ele ->
+        acc.add(acc.last() + ele.second)
+        acc
+    }
+    val cSum = costs.fold(mutableListOf(0)) { acc, ele ->
+        acc.add(acc.last() + ele.third)
+        acc
     }
 
-    val fromRoot = Array(n) {-1L}.also { it[edges.first().first] = 0L }
-
-    val q = ArrayDeque<Int>()
-
-    q.addFirst(edges.first().first)
-
-    while (!q.isEmpty()) {
-        val u = q.removeLast()
-        for ((v, w) in nodes[u]) {
-            if(fromRoot[v] >= 0) continue
-            fromRoot[v] = fromRoot[u] xor w
-            q.addFirst(v)
-        }
+    val getMin = { ind: Int ->
+        var a = Int.MAX_VALUE
+        for (i in 0..ind) a = min(a, minArr[i])
+        a
     }
 
-    val cnt = MutableList(60) {0} to MutableList(60) {0}
+    var ans = Int.MAX_VALUE
 
-    val mod = 1000_000_007
-
-    var ans = 0L
-
-    for (i in 0 until 60) {
-        for (d in fromRoot) {
-            if(d shr i and 1L == 0L) cnt.first[i]++
-            else cnt.second[i]++
-        }
-        ans += (cnt.first[i]*((1L shl i) % mod))%mod * cnt.second[i]
-        ans %= mod
+    for (i in 0 until n) {
+        dp[i + 1] = minOf(bSum[i], getMin(permutation.indexOf(i)) + aSum[i])
+        ans = min(ans, dp[i + 1] + cSum[n] - cSum[i + 1])
+        minArr[permutation.indexOf(i)] = dp[i + 1] - aSum[i + 1]
     }
 
     ans.let(::println)
