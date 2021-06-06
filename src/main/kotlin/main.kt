@@ -1,45 +1,56 @@
-import kotlin.math.min
-
 fun next() = readLine()!!.trim()
 
 @kotlin.ExperimentalStdlibApi
 fun main() {
-    val n = readLine()!!.trim().toInt()
-    val permutation = readLine()!!.trim().split(' ').map { it.toInt() - 1 }
-    val costs = List(n) {
-        val (a, b, c) = readLine()!!.trim().split(' ').map(String::toInt)
-        Triple(a, minOf(a, b), minOf(a, c))
+    val (n, k) = next().split(' ').map { it.toInt() }
+
+
+    val sq = Array(n) { next().split(' ').map { it.toInt() } }
+
+
+    var r = 1_000_000_000
+    var l = -1
+
+    outer@ while (r - l > 1) {
+
+        val m: Int = (r + l) / 2
+
+        val c = sq.map { arr ->
+            arr.map {
+                when {
+                    it == m -> 0
+                    it > m -> 1
+                    else -> -1
+                }
+            }
+        }
+
+        val cs = Array(n + 1) { IntArray(n + 1) }
+        val csz = Array(n + 1) { IntArray(n + 1) }
+
+        for (i in c.indices) for (j in c[i].indices) {
+            cs[i + 1][j + 1] = cs[i + 1][j] + c[i][j]
+            csz[i + 1][j + 1] = csz[i + 1][j]
+
+            if (c[i][j] == 0) csz[i + 1][j + 1] += 1
+        }
+
+        for (i in 1..n) for (j in c.indices) {
+            cs[j + 1][i] += cs[j][i]
+            csz[j + 1][i] += csz[j][i]
+        }
+
+        for (i in 0..n - k) for (j in 0..n - k) {
+            val s = cs[i + k][j + k] + cs[i][j] - cs[i + k][j] - cs[i][j + k]
+            val sz = csz[i + k][j + k] + csz[i][j] - csz[i + k][j] - csz[i][j + k]
+
+            if (s <= sz) {
+                r = m
+                continue@outer
+            }
+        }
+        l = m
     }
 
-    val minArr = IntArray(n + 1) { Int.MAX_VALUE }.also { it[0] = 0 }
-    val dp = IntArray(n + 1) { Int.MAX_VALUE }.also { it[0] = 0 }
-
-    val aSum = costs.fold(mutableListOf(0)) { acc, ele ->
-        acc.add(acc.last() + ele.first)
-        acc
-    }
-    val bSum = costs.fold(mutableListOf(0)) { acc, ele ->
-        acc.add(acc.last() + ele.second)
-        acc
-    }
-    val cSum = costs.fold(mutableListOf(0)) { acc, ele ->
-        acc.add(acc.last() + ele.third)
-        acc
-    }
-
-    val getMin = { ind: Int ->
-        var a = Int.MAX_VALUE
-        for (i in 0..ind) a = min(a, minArr[i])
-        a
-    }
-
-    var ans = Int.MAX_VALUE
-
-    for (i in 0 until n) {
-        dp[i + 1] = minOf(bSum[i], getMin(permutation.indexOf(i)) + aSum[i])
-        ans = min(ans, dp[i + 1] + cSum[n] - cSum[i + 1])
-        minArr[permutation.indexOf(i)] = dp[i + 1] - aSum[i + 1]
-    }
-
-    ans.let(::println)
+    println(r)
 }
