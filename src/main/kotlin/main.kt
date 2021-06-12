@@ -2,23 +2,40 @@ fun next() = readLine()!!.trim()
 
 @kotlin.ExperimentalStdlibApi
 fun main() {
-    val (n, m) = next().split(' ').map { it.toInt() }
+    val (n, k) = next().split(' ').map(String::toInt)
 
-    val bPawns = Array(m) {
-        val (x, y) = next().split(' ').map { it.toInt() }
-        x to y
-    }.groupBy { it.first }.entries.sortedBy {it.key}
+    val heights = next().split(' ').map(String::toInt).sorted().toIntArray()
 
-    val ans = hashSetOf(n)
-
-    for ((_, pos) in bPawns) {
-
-        val diagonal = pos.filter { it.second + 1 in ans || it.second - 1 in ans  }
-
-        pos.forEach { ans.remove(it.second) }
-
-        diagonal.forEach { ans.add(it.second) }
+    val dp = Array(n + 1) { IntArray(31) { 1_000_000_001 } }.also {
+        it.mapIndexed { index, i -> i[0] = index }
     }
 
-    println(ans.size)
+    for (i in 1..n) {
+        val a = heights.getMaxHalf(heights[i - 1])
+        for (j in 1..30) {
+            val pu = dp[i - 1][j] + 1
+            val np = if (a < 0) 0 else dp[a][j - 1]
+            dp[i][j] = minOf(pu, np)
+        }
+    }
+
+    val ans = dp[n].indexOfFirst { it <= k }
+
+    print("$ans  ${if (ans == -1) dp[n][0] else dp[n][ans]}")
+
+}
+
+fun IntArray.getMaxHalf(v: Int): Int {
+    var r = size
+    var l = 0
+
+    val half = v shr 1
+
+    while (r > l) {
+        val mid = (r + l) / 2
+
+        if (get(mid) <= half) l = mid + 1
+        else r = mid
+    }
+    return r
 }
