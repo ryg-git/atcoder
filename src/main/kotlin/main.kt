@@ -1,3 +1,6 @@
+import java.util.*
+import kotlin.math.min
+
 fun next() = readLine()!!.trim()
 
 @kotlin.ExperimentalStdlibApi
@@ -5,53 +8,113 @@ fun main() {
     solve()
 }
 
-const val MOD = 1_000_000_007
+data class Edge(val from: Int, val to: Int, val cap: Int)
+data class EData(val to: Int, var cap: Int, val rev: Int)
 
-fun solve() {
-    val (n, m, k) = next().split(' ').map(String::toInt)
-    if (n > m + k) {
-        println(0)
-        return
+fun maxFlow(n: Int, E: List<Edge>, s: Int, t: Int): Int {
+
+    val parents = IntArray(n) { -1 }
+    val levels = IntArray(n) { -1 }
+    val depth = IntArray(n) { -1 }
+
+    val paths = Array(n) {mutableListOf<EData>()}
+
+    for (i in E) {
+        paths[i.from].add(EData(i.to, i.cap, paths[i.to].size))
+        paths[i.to].add(EData(i.from, 0, paths[i.from].size - 1))
     }
 
-    if (n == 0) {
-        println(1)
-        return
-    } else if (m == 0) {
-        if (n <= k) println(1) else println(0)
-        return
+
+    fun bfs(s: Int, t: Int): Boolean {
+        var head = 0
+
+        var tail = head
+
+        depth[s] = 0
+        levels[head++] = s
+
+        while (head > tail) {
+            val pt = levels[tail++]
+
+            if (pt == t) return true
+
+            for (i in paths[pt]) {
+                if (depth[i.to] == -1 && i.cap > 0) {
+                    depth[i.to] = depth[pt] + 1
+                    levels[head++] = i.to
+                }
+            }
+        }
+
+        return false
     }
 
-    val fact = LongArray (n + m + 1) {1}
-    val inv = LongArray (n + m + 1) {1}
-
-    for (i in 2..fact.lastIndex) {
-        fact[i] = i * fact[i - 1] % MOD
+    fun dfs(u: Int, f: Int): Int {
+        if(u == t) return f
+        for (i in paths[u]) {
+            if (i.cap > 0 && depth[u] < depth[i.to]) {
+                val gain = dfs(i.to, min(f, i.cap))
+                if (gain > 0) {
+                    i.cap -= gain
+                    paths[i.to][i.rev].cap += gain
+                    return gain
+                }
+            }
+        }
+        return 0
     }
 
-    inv[inv.lastIndex] = power(fact.last())
+    var maxFlowAns = 0
 
-    for (i in inv.lastIndex downTo 2) {
-        inv[i - 1] = i * inv [i] % MOD
+    while (bfs(s, t)) {
+        var pathFlows = Int.MAX_VALUE
+
+        while (true) {
+            pathFlows = dfs(s, pathFlows)
+            if (pathFlows <= 0) break
+            maxFlowAns += pathFlows
+        }
+
+        maxFlowAns += pathFlows
+        Arrays.fill(parents, -1)
+        Arrays.fill(depth, -1)
     }
 
-    val choose = {nn: Int, r: Int -> if (r <= nn) fact[nn] * inv[r] % MOD * inv[nn - r] % MOD else 0L}
-
-    println((choose(n + m, m) - choose(n + m, m + k + 1) + MOD) % MOD)
-
+    return maxFlowAns
 }
 
-private fun power(base: Long): Long {
-    var r = 1L
-    var b = base
-    var exp = MOD - 2
-    while (exp > 0) {
-        if((exp and 1) == 1) {
-            r = r * b % MOD
-        }
-        b = b * b % MOD
-        exp = exp shr 1
+
+fun solve() {
+    val (h, w, n) = next().split(' ').map { it.toInt() }
+
+    val matrix = List(n) {
+        next().split(' ').map { it.toInt() - 1}
     }
 
-    return r
+    val s = h + w + 2*n
+    val t = s + 1
+
+    val edges = mutableListOf<Edge>()
+
+    fun nodeP(i: Int) = h + w + i
+
+    fun nodeP2(i: Int) = h + w + n + i
+
+    for (i in 0 until h) edges.add(Edge(s, i, 1))
+
+    for (i in 0 until w) edges.add(Edge(h + i, t, 1))
+
+    matrix.forEachIndexed { index, list ->
+        edges.add(Edge(nodeP(index), nodeP2(index), 1))
+
+        val (a, b, c, d) = list
+
+        for (i in a..c) edges.add(Edge(i, nodeP(index), 1))
+
+        for (i in b..d) edges.add(Edge(nodeP2(index), h + i, 1))
+    }
+
+    val ans = maxFlow(t + 1, edges, s, t)
+
+    println(ans)
 }
