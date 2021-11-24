@@ -1,35 +1,36 @@
+import java.util.*
+
 fun next() = readLine()!!.trim()
 
-@kotlin.ExperimentalStdlibApi
 fun main() {
-    solve()
-}
-
-fun solve() {
-    val n = next().toInt()
-    val fuses  = List(n) {next().split(' ').map { it.toDouble()}}
-
-    var total = 0.0
-
-    for (i in fuses) {
-        total += i[0] / i[1]
+    val (n, m) = next().split(' ').map(String::toInt)
+    val cons = List(m) {
+        next().split(' ').map {it.toInt() - 1}
     }
 
-    var tm = total / 2
+    val inn = List(n) { mutableListOf<Int>() }
 
-    var dist = 0.0
+    val used = IntArray(n)
 
-    for (i in fuses) {
-        val t = i[0] / i[1]
+    for (i in cons) {
+        inn[i[0]].add(i[1])
+        used[i[1]] += 1
+    }
 
-        if (t < tm) {
-            tm -= t
-            dist += i[0]
-        } else {
-            dist += tm * i[1]
-            break
+    val ans = mutableListOf<Int>()
+
+    val queue = PriorityQueue<Int>().also { it.addAll(used.indices.filter { i -> used[i] == 0 }) }
+
+    while (queue.isNotEmpty()) {
+        val top = queue.poll()
+        ans.add(top + 1)
+        for (next in inn[top]) {
+            if (--used[next] == 0) {
+                queue.add(next)
+            }
         }
     }
 
-    println(dist)
+    if(ans.size < n) println(-1)
+    else println(ans.joinToString(" "))
 }
