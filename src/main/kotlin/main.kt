@@ -2,35 +2,21 @@ import java.util.*
 
 fun next() = readLine()!!.trim()
 
+fun solveH(x: Long, y: Long, a: Long, b: Long, c: Long): Boolean {
+    val r = (a + x - 1) / x
+    val s = (b + x - 1) / x
+    val t = (c + x - 1) / x
+    return r + s + t in 0 .. y
+}
+
+
+
 fun main() {
-    val (n, m) = next().split(' ').map(String::toInt)
-    val cons = List(m) {
-        next().split(' ').map {it.toInt() - 1}
+    val (x, y, a, b, c) = next().split(' ').map(String::toLong)
+    val axis = listOf(x, y)
+    val area = listOf(a, b, c)
+
+    val ans = (0..1).any {
+        true
     }
-
-    val inn = List(n) { mutableListOf<Int>() }
-
-    val used = IntArray(n)
-
-    for (i in cons) {
-        inn[i[0]].add(i[1])
-        used[i[1]] += 1
-    }
-
-    val ans = mutableListOf<Int>()
-
-    val queue = PriorityQueue<Int>().also { it.addAll(used.indices.filter { i -> used[i] == 0 }) }
-
-    while (queue.isNotEmpty()) {
-        val top = queue.poll()
-        ans.add(top + 1)
-        for (next in inn[top]) {
-            if (--used[next] == 0) {
-                queue.add(next)
-            }
-        }
-    }
-
-    if(ans.size < n) println(-1)
-    else println(ans.joinToString(" "))
 }
