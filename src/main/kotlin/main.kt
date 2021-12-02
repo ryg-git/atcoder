@@ -10,13 +10,16 @@ fun solveH(x: Long, y: Long, a: Long, b: Long, c: Long): Boolean {
 }
 
 
-
 fun main() {
     val (x, y, a, b, c) = next().split(' ').map(String::toLong)
     val axis = listOf(x, y)
     val area = listOf(a, b, c)
 
-    val ans = (0..1).any {
-        true
+    val ans = (0..1).any { ax ->
+        val h = axis[ax]
+        val w = axis[ax]
+        (0..2).any {
+            true
+        }
     }
 }
